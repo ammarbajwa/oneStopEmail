@@ -29,6 +29,57 @@ import EmailDetail from '../components/EmailDetail';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import { ThemeOption } from '../theme/themes';
 
+interface Category {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+}
+
+interface DrawerContentProps {
+  categories: Category[];
+  selectedCategory: string;
+  onCategorySelect: (category: string) => void;
+}
+
+function DrawerContent({ categories, selectedCategory, onCategorySelect }: DrawerContentProps) {
+  return (
+    <Box sx={{ overflow: 'auto', mt: 2 }}>
+      <List>
+        {categories.map((category) => (
+          <ListItem
+            button
+            key={category.id}
+            selected={category.id === selectedCategory}
+            onClick={() => onCategorySelect(category.id)}
+            sx={{
+              borderRadius: 2,
+              mx: 1,
+              mb: 0.5,
+              '&.Mui-selected': {
+                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                '&:hover': {
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.15),
+                },
+              },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}>
+              {category.icon}
+            </ListItemIcon>
+            <ListItemText 
+              primary={category.name}
+              primaryTypographyProps={{
+                fontSize: '0.9rem',
+                fontWeight: category.id === selectedCategory ? 600 : 400,
+              }}
+            />
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+}
+
 interface HomeProps {
   currentTheme: ThemeOption;
   onThemeChange: (theme: ThemeOption) => void;
@@ -38,6 +89,7 @@ export default function Home({ currentTheme, onThemeChange }: HomeProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('inbox');
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
+  const [isHovering, setIsHovering] = useState(false);
   const theme = useTheme();
 
   const categories = [
@@ -60,95 +112,85 @@ export default function Home({ currentTheme, onThemeChange }: HomeProps) {
         sx={{
           bgcolor: 'background.paper',
           borderBottom: `1px solid ${theme.palette.divider}`,
+          zIndex: theme => theme.zIndex.drawer + 2,
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ display: 'flex', alignItems: 'center' }}>
           <IconButton
             color="primary"
             edge="start"
             onClick={() => setDrawerOpen(true)}
-            sx={{ mr: 2 }}
+            sx={{ mr: 2, display: { md: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" color="primary" noWrap component="div" sx={{ flexGrow: 1 }}>
-            AI Email Agent
-          </Typography>
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="h6" color="primary" sx={{ fontWeight: 600 }}>
+              AI Email Assistant
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              Smart email categorization & AI-powered responses
+            </Typography>
+          </Box>
           <ThemeSwitcher currentTheme={currentTheme} onThemeChange={onThemeChange} />
         </Toolbar>
       </AppBar>
 
+      {/* Mobile Drawer */}
       <Drawer
-        variant="permanent"
+        variant="temporary"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
         sx={{
-          width: 280,
-          flexShrink: 0,
-          display: { xs: 'none', md: 'block' },
+          display: { xs: 'block', md: 'none' },
           '& .MuiDrawer-paper': {
             width: 280,
             boxSizing: 'border-box',
-            border: 'none',
             bgcolor: 'background.paper',
-            boxShadow: theme => `0 0 20px ${alpha(theme.palette.primary.main, 0.08)}`,
           },
         }}
       >
-        <Toolbar />
-        <Box sx={{ overflow: 'auto', mt: 2 }}>
-          <List>
-            {categories.map((category) => (
-              <ListItem
-                button
-                key={category.id}
-                selected={selectedCategory === category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                sx={{
-                  mb: 1,
-                  '&.Mui-selected': {
-                    bgcolor: theme => alpha(theme.palette.primary.main, 0.08),
-                    '&:hover': {
-                      bgcolor: theme => alpha(theme.palette.primary.main, 0.12),
-                    },
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ color: 'primary.main' }}>{category.icon}</ListItemIcon>
-                <ListItemText 
-                  primary={category.name}
-                  primaryTypographyProps={{
-                    fontWeight: selectedCategory === category.id ? 600 : 400,
-                  }}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </Box>
+        <DrawerContent categories={categories} selectedCategory={selectedCategory} onCategorySelect={setSelectedCategory} />
       </Drawer>
 
-      <Drawer
-        anchor="left"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        sx={{ display: { xs: 'block', md: 'none' } }}
+      {/* Hover Drawer */}
+      <Box
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+        sx={{
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 20,
+          zIndex: theme => theme.zIndex.drawer + 1,
+          display: { xs: 'none', md: 'block' },
+        }}
       >
-        <Box sx={{ width: 280 }} role="presentation">
-          <List>
-            {categories.map((category) => (
-              <ListItem
-                button
-                key={category.id}
-                onClick={() => {
-                  setSelectedCategory(category.id);
-                  setDrawerOpen(false);
-                }}
-              >
-                <ListItemIcon sx={{ color: 'primary.main' }}>{category.icon}</ListItemIcon>
-                <ListItemText primary={category.name} />
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      </Drawer>
+        <Drawer
+          variant="permanent"
+          open={isHovering}
+          sx={{
+            display: { xs: 'none', md: 'block' },
+            '& .MuiDrawer-paper': {
+              width: isHovering ? 280 : 20,
+              transition: theme => theme.transitions.create('width', {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+              overflowX: 'hidden',
+              bgcolor: 'background.paper',
+              borderRight: 'none',
+              boxShadow: isHovering ? theme => `0 0 20px ${alpha(theme.palette.primary.main, 0.08)}` : 'none',
+            },
+          }}
+        >
+          <Toolbar />
+          {isHovering && (
+            <DrawerContent categories={categories} selectedCategory={selectedCategory} onCategorySelect={setSelectedCategory} />
+          )}
+        </Drawer>
+      </Box>
 
       <Box
         component="main"
