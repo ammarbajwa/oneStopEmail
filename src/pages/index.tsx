@@ -37,6 +37,7 @@ interface HomeProps {
 export default function Home({ currentTheme, onThemeChange }: HomeProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('inbox');
+  const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
   const theme = useTheme();
 
   const categories = [
@@ -46,6 +47,10 @@ export default function Home({ currentTheme, onThemeChange }: HomeProps) {
     { id: 'promotions', name: 'Promotions', icon: <PromotionIcon /> },
     { id: 'spam', name: 'Spam', icon: <SpamIcon /> },
   ];
+
+  const handleEmailSelect = (emailId: string) => {
+    setSelectedEmailId(emailId);
+  };
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: 'background.default' }}>
@@ -165,7 +170,7 @@ export default function Home({ currentTheme, onThemeChange }: HomeProps) {
                 flexDirection: 'column',
               }}
             >
-              <EmailList category={selectedCategory} />
+              <EmailList category={selectedCategory} onEmailSelect={handleEmailSelect} />
             </Paper>
           </Grid>
           <Grid item xs={12} md={7} lg={8}>
@@ -178,7 +183,18 @@ export default function Home({ currentTheme, onThemeChange }: HomeProps) {
                 flexDirection: 'column',
               }}
             >
-              <EmailDetail />
+              {selectedEmailId ? (
+                <EmailDetail emailId={selectedEmailId} />
+              ) : (
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center',
+                  height: '100%'
+                }}>
+                  Select an email to view details
+                </Box>
+              )}
             </Paper>
           </Grid>
         </Grid>
